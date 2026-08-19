@@ -1,0 +1,1 @@
+I hope validation layers work, but I don't know how to test it as of right now. for now, work on physical device and logical device
