@@ -103,6 +103,7 @@ add_library(Renderer_lib STATIC ${RENDERER_SOURCES})
 add_library(Platform_lib STATIC ${PLATFORM_SOURCES})
 
 add_compile_definitions(NDEBUG)
+#add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
 
 target_include_directories(Renderer_lib
     PUBLIC

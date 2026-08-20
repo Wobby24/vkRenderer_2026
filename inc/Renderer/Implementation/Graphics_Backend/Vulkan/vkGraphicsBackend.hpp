@@ -4,7 +4,9 @@
 #include <Renderer/Interface/Types/GraphicsAPIs.hpp>
 #include <Renderer/Implementation/Graphics_Backend/Vulkan/vkInitParams.hpp>
 #include <Renderer/Implementation/Graphics_Backend/Vulkan/Types/vk/vkContext.hpp>
+#include <vulkan/vulkan_raii.hpp>
 #include <memory>
+#include <cstdint>
 #include <vector>
 
 namespace Aero {
@@ -27,7 +29,9 @@ namespace Aero {
                 Renderer::vkInitParams params_;
                 Renderer::vkContext vkContext_;
                 void createInstance();
+                void setupDebugMessenger();
                 void pickPhysicalDevice();
+                uint32_t ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice);
             };
         }
     }

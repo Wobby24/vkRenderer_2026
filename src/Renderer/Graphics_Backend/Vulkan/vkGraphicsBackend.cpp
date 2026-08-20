@@ -12,7 +12,7 @@ namespace Aero {
 
 			void vkGraphicsBackend::Initialize() {
 				createInstance();
-				setupDebugMessenger(vkContext_.debugMessenger, vkContext_.instance);
+				setupDebugMessenger();
 			}
 
 			void vkGraphicsBackend::Shutdown() {
@@ -84,14 +84,59 @@ namespace Aero {
 
 			}
 
+			void vkGraphicsBackend::setupDebugMessenger() {
+				if (!enableValidationLayers) return;
+
+				vk::DebugUtilsMessageSeverityFlagsEXT severityFlags =
+					vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+					vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+
+
+				vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags =
+					vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+					vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+					vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+
+				vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfoEXT;
+				debugUtilsMessengerCreateInfoEXT.messageSeverity = severityFlags;
+				debugUtilsMessengerCreateInfoEXT.messageType = messageTypeFlags;
+				debugUtilsMessengerCreateInfoEXT.pfnUserCallback = &debugCallback;
+
+				vkContext_.debugMessenger = vkContext_.instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
+			}
+
 			void vkGraphicsBackend::pickPhysicalDevice() {
 				auto physicalDevices = vkContext_.instance.enumeratePhysicalDevices();
-
 				if (physicalDevices.empty()) {
 					throw std::runtime_error("Failed to find GPUs with Vulkan support!");
 				}
 
+				for (auto physicalDevice: physicalDevices) {
+	
+				}
+			}
 
+			uint32_t vkGraphicsBackend::ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice) {
+				auto deviceProperties = physicalDevice.getProperties();
+				auto deviceFeatures = physicalDevice.getFeatures();
+				
+				uint32_t score = 0;
+
+				// discrete gpu check. usually seperates the powerful ones with the weak ones. Although there is an edge case where a super weak, older gpu will be selected over the better, integrated one because it's
+				// discrete, but we will fix that
+				if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+					score += 10000;
+				}
+
+				if (deviceFeatures.geometryShader == true) {
+					score += 2000;
+				}
+
+				if (deviceFeatures.tessellationShader == true) {
+					score += 2000;
+				}
+
+				// idk what else to put here besides memory checks
 			}
 		}
 	}

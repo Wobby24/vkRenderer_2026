@@ -24,29 +24,7 @@ namespace Aero::Renderer::Impl {
 			Aero::Utilities::Logger::instance().log(Utilities::Logger::Severity::INFO, "validation layer: type " + std::to_string(static_cast<uint32_t>(type)) + " msg: " + pCallbackData->pMessage);
 		}
 
-
 		return vk::False;
-	}
-
-	void setupDebugMessenger(vk::raii::DebugUtilsMessengerEXT& debugMessenger, vk::raii::Instance& instance) {
-		if (!enableValidationLayers) return;
-
-		vk::DebugUtilsMessageSeverityFlagsEXT severityFlags =
-			vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-			vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-
-
-		vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags =
-			vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-			vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-
-		vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfoEXT;
-		debugUtilsMessengerCreateInfoEXT.messageSeverity = severityFlags;
-		debugUtilsMessengerCreateInfoEXT.messageType = messageTypeFlags;
-		debugUtilsMessengerCreateInfoEXT.pfnUserCallback = &debugCallback;
-
-		debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 	}
 }
 

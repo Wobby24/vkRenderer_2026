@@ -1,1 +1,4 @@
-I hope validation layers work, but I don't know how to test it as of right now. for now, work on physical device and logical device
+I hope validation layers work, but I don't know how to test it as of right now. for now, work on physical device and logical device. 
+
+for physical device selection, just follow the tutorial. Maybe added biases if needed for things like AI (VRAM hungry) or stuff like that. 
+I would personally add VRAM checks and maybe any way to see compute power of gpu if possible.

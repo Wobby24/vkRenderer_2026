@@ -20,5 +20,4 @@ namespace Aero::Renderer::Impl {
 		vk::DebugUtilsMessageTypeFlagsEXT              type,
 		const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData);
-	void setupDebugMessenger(vk::raii::DebugUtilsMessengerEXT& debugMessenger, vk::raii::Instance& instance);
 }
