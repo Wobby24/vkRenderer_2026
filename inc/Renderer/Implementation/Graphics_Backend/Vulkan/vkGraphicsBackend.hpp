@@ -31,7 +31,9 @@ namespace Aero {
                 void createInstance();
                 void setupDebugMessenger();
                 void pickPhysicalDevice();
-                uint32_t ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice);
+                uint64_t ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice);
+                bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice);
+                void createLogicalDevice();
             };
         }
     }

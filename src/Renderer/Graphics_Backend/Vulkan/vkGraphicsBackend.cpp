@@ -4,6 +4,8 @@
 #include <Utilities/Assert.hpp>
 #include <Renderer/Implementation/Graphics_Backend/Vulkan/Types/vk/ValidationLayer.hpp>
 #include <vulkan/vulkan_raii.hpp>
+#include <algorithm>
+#include <map>
 
 namespace Aero {
 	namespace Renderer {
@@ -111,32 +113,162 @@ namespace Aero {
 					throw std::runtime_error("Failed to find GPUs with Vulkan support!");
 				}
 
+				std::multimap<uint64_t, vk::raii::PhysicalDevice> candidates;
+
 				for (auto physicalDevice: physicalDevices) {
-	
+					if (isDeviceSuitable(physicalDevice)) {
+						uint64_t score = ratePhysicalDevices(physicalDevice);
+						candidates.insert(std::make_pair(score, physicalDevice));
+					}
 				}
+
+				if (candidates.empty()) {
+					throw std::runtime_error("No GPU with requested Vulkan support found!");
+				}
+
+				// multi map is auto ordered, so because the highest score will be at the top, we can just select the top one's second param (which is the physical device)
+				vkContext_.physicalDevice = candidates.rbegin()->second;
 			}
 
-			uint32_t vkGraphicsBackend::ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice) {
+			bool vkGraphicsBackend::isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice) {
+				auto queueFamilies = physicalDevice.getQueueFamilyProperties();
+
+				bool isGrahpicsQueueSupported = false;
+				bool isRequestedVulkanVersionSupported = false;
+				bool supportsRequiredFeatures = false;
+
+				// features for 1.3+
+				auto features = physicalDevice.template getFeatures2<vk::PhysicalDeviceFeatures2,
+					vk::PhysicalDeviceVulkan11Features,
+					vk::PhysicalDeviceVulkan13Features,
+					vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+
+				// queuflags uses a bitmask, so we cant just do ==, instead we use the and op to compare the 2 and see if it produces a non zero value, or zero
+				for (const auto& queueFamily : queueFamilies) {
+					if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
+						isGrahpicsQueueSupported = true;
+						break;
+					}
+				}
+
+				// implement api checks. i dont really like this, however its good enough for now
+				switch (params_.VulkanVersionMinor) {
+				case 0:
+					isRequestedVulkanVersionSupported = physicalDevice.getProperties().apiVersion >= vk::ApiVersion10;
+					supportsRequiredFeatures = true;
+					break;
+				case 1:
+					isRequestedVulkanVersionSupported = physicalDevice.getProperties().apiVersion >= vk::ApiVersion11;
+					supportsRequiredFeatures = true;
+					break;
+				case 2:
+					isRequestedVulkanVersionSupported = physicalDevice.getProperties().apiVersion >= vk::ApiVersion12;
+					supportsRequiredFeatures = true;
+					break;
+				case 3:
+					isRequestedVulkanVersionSupported = physicalDevice.getProperties().apiVersion >= vk::ApiVersion13;
+					break;
+				case 4:
+					isRequestedVulkanVersionSupported = physicalDevice.getProperties().apiVersion >= vk::ApiVersion14;
+
+					break;
+				default:
+					return false;
+				}
+
+				if (params_.VulkanVersionMinor >= 3) {
+					supportsRequiredFeatures = features.template get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters &&
+						features.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
+						features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+				}
+
+				return (isGrahpicsQueueSupported && isRequestedVulkanVersionSupported && supportsRequiredFeatures);
+			}
+
+			uint64_t vkGraphicsBackend::ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice) {
+				// properties, features, and extensions
 				auto deviceProperties = physicalDevice.getProperties();
 				auto deviceFeatures = physicalDevice.getFeatures();
+				auto deviceMemoryProperties = physicalDevice.getMemoryProperties();
+				auto deviceExtensionProperties = physicalDevice.enumerateDeviceExtensionProperties();
 				
-				uint32_t score = 0;
+				uint64_t score = 0;
+
+				// device properties
 
 				// discrete gpu check. usually seperates the powerful ones with the weak ones. Although there is an edge case where a super weak, older gpu will be selected over the better, integrated one because it's
 				// discrete, but we will fix that
 				if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
 					score += 10000;
 				}
+				else if (deviceProperties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+					score += 1000;  // iGPUs get a lower base baseline
+				}
 
-				if (deviceFeatures.geometryShader == true) {
+				// maximum possible size of textures 
+				score += deviceProperties.limits.maxImageDimension2D;
+
+				// device features
+				vk::Bool32 boolean = true;
+				if (deviceFeatures.geometryShader == boolean) {
 					score += 2000;
 				}
 
-				if (deviceFeatures.tessellationShader == true) {
+				if (deviceFeatures.tessellationShader == boolean) {
 					score += 2000;
 				}
 
-				// idk what else to put here besides memory checks
+				// device memory properties
+
+				uint64_t totalDeviceLocalMemory = 0;
+				for (uint32_t i = 0; i < deviceMemoryProperties.memoryHeapCount; i++) {
+					if (deviceMemoryProperties.memoryHeaps[i].flags & vk::MemoryHeapFlags::BitsType::eDeviceLocal) {
+						totalDeviceLocalMemory += deviceMemoryProperties.memoryHeaps[i].size;
+					}
+				}
+
+				uint64_t memoryInMB = totalDeviceLocalMemory / (1024 * 1024);
+
+				if (deviceProperties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+					// cap integrated gpu memory contribution so 32GB of slow RAM doesn't break the math
+					score += std::min(memoryInMB, uint64_t(2048));
+				}
+				else {
+					score += memoryInMB;
+				}
+				
+				// extensions feature check
+				const std::string extensionsForPoints[4] = {
+					"VK_KHR_ray_tracing_pipeline",
+					"VK_EXT_descriptor_indexing",
+					"VK_KHR_dynamic_rendering",
+					"VK_KHR_synchronization2",
+				};
+
+				for (int i = 0; i < 4; i++) {
+					const std::string& targetExt = extensionsForPoints[i];
+
+					auto it = std::find_if(deviceExtensionProperties.begin(),
+						deviceExtensionProperties.end(),
+						[&targetExt](const VkExtensionProperties& prop) {
+							return targetExt == prop.extensionName; 
+						});
+
+					if (it != deviceExtensionProperties.end()) {
+						score += 2500;
+					}
+				}
+
+				return score;
+			}
+
+			void vkGraphicsBackend::createLogicalDevice() {
+				// Khronos tutorial uses some of the ugliest C++ syntax, template metaprogramming soup known to man. Its ugly as fuck. I genuinely don't want to use it, but it's RAII or the C API
+				// I don't mind the C API, heck, I actually love it. Linear syntax, and no metaprogramming. Problem is RAII is too convient and namespaces, class enums, etc. make the C API look unorganized.
+				// but alas, I'll have to deal with the C++ 23 RAII slop they throw at me. Surely there is a better way to do all of this, right?
+				// There is! DON'T FUCKING USE THE SLOP SYNTAX
+
+
 			}
 		}
 	}

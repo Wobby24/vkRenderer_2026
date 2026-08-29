@@ -25,8 +25,7 @@ namespace Aero::Renderer::Impl {
 			params.enableValidationLayers = true; 
 			params.extensionInfo = params_.extensionInfo;
 			params.renderSurface = params_.renderSurface_;
-			params.VulkanVersionMinor = 4;
-			params.VulkanVersionMinorMinimum = 0;
+			params.VulkanVersionMinor = 3;
 
 			graphicsBackend_ = allocator_.allocate<Renderer::Impl::vkGraphicsBackend>(params);
 			graphicsBackend_->Initialize();

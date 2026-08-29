@@ -45,7 +45,7 @@ set(DOCS_DIR "${CMAKE_SOURCE_DIR}/docs")
 set(RENDERER_SOURCES
     "src/Renderer/Graphics_Backend/Vulkan/vkGraphicsBackend.cpp"
     "src/Renderer/Test_Renderer.cpp"
- "src/Renderer/Graphics_Backend/Vulkan/Types/vk/ValidationLayer.cpp")
+)
 
 set(PLATFORM_SOURCES
     "src/Platform/Window/GLFW_Window.cpp"

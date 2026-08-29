@@ -9,7 +9,6 @@ namespace Aero {
 		struct vkInitParams {
 			// include basic information
 			int VulkanVersionMinor = 4;
-			int VulkanVersionMinorMinimum = 4;
 			bool enableValidationLayers = true;
 			Platform::Window::Interface::ExtensionInfo extensionInfo;
 			Platform::Window::Interface::IRenderSurface* renderSurface = nullptr;
