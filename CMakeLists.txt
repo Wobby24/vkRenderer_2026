@@ -92,7 +92,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glm)
 
 # Vulkan
-find_package(Vulkan REQUIRED)
+find_package(Vulkan REQUIRED COMPONENTS glslc)
 message(STATUS "Vulkan libraries: ${Vulkan_LIBRARIES}")
 
 
@@ -110,7 +110,6 @@ target_include_directories(Renderer_lib
         ${INC_DIR}
         ${EXT_INC_DIR}
         ${glm_SOURCE_DIR}
-        "$ENV{VULKAN_SDK}/Include"
 )
 
 target_include_directories(Platform_lib
@@ -161,15 +160,7 @@ set(SHADER_OUTPUT_DIR "${CMAKE_BINARY_DIR}/res/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
 # GLSL shader compilation (glslc)
-if(WIN32)
-    set(GLSLC_EXECUTABLE "$ENV{VULKAN_SDK}/Bin/glslc.exe")
-else()
-    set(GLSLC_EXECUTABLE "$ENV{VULKAN_SDK}/x86_64/bin/glslc")
-endif()
-
-if(NOT EXISTS ${GLSLC_EXECUTABLE})
-    message(FATAL_ERROR "Could not find glslc compiler. Install Vulkan SDK.")
-endif()
+set(GLSLC_EXECUTABLE Vulkan::glslc)
 
 file(GLOB_RECURSE GLSL_SOURCES
     "${SHADER_DIR}/*.vert"

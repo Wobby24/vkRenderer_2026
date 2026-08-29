@@ -263,10 +263,7 @@ namespace Aero {
 			}
 
 			void vkGraphicsBackend::createLogicalDevice() {
-				// Khronos tutorial uses some of the ugliest C++ syntax, template metaprogramming soup known to man. Its ugly as fuck. I genuinely don't want to use it, but it's RAII or the C API
-				// I don't mind the C API, heck, I actually love it. Linear syntax, and no metaprogramming. Problem is RAII is too convient and namespaces, class enums, etc. make the C API look unorganized.
-				// but alas, I'll have to deal with the C++ 23 RAII slop they throw at me. Surely there is a better way to do all of this, right?
-				// There is! DON'T FUCKING USE THE SLOP SYNTAX
+			
 
 
 			}
