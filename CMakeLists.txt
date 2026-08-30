@@ -18,14 +18,14 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Xcode")
     set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs" FORCE)
 endif()
 
-# Compiler flags
-if(MSVC)
-    set(CMAKE_CXX_FLAGS_DEBUG "/W4 /WX /Zi /Od")
-    set(CMAKE_CXX_FLAGS_RELEASE "/W4 /WX /O2")
-else()
-    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -g -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -O3")
-endif()
+# Compiler flags 
+#if(MSVC)
+#    set(CMAKE_CXX_FLAGS_DEBUG "/W4 /WX /Zi /Od")
+#    set(CMAKE_CXX_FLAGS_RELEASE "/W4 /WX /O2")
+#else()
+#    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -g -O0")
+#    set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -O3")
+#endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -90,6 +90,19 @@ FetchContent_Declare(
     GIT_TAG        1.0.2
 )
 FetchContent_MakeAvailable(glm)
+
+FetchContent_Declare(
+    slang
+    GIT_REPOSITORY https://github.com/shader-slang/slang.git
+    GIT_TAG v2026.16.1
+)
+set(SLANG_ENABLE_OPTIX OFF CACHE INTERNAL "")
+set(SLANG_ENABLE_CUDA OFF CACHE INTERNAL "")
+set(SLANG_ENABLE_NVAPI OFF CACHE INTERNAL "")
+set(SLANG_RHI_ENABLE_CUDA OFF CACHE BOOL "Disable RHI CUDA" FORCE)
+set(SLANG_RHI_ENABLE_OPTIX OFF CACHE BOOL "Disable RHI OptiX" FORCE)
+set(SLANG_RHI_ENABLE_VULKAN ON CACHE BOOL "Enable Vulkan" FORCE)
+FetchContent_MakeAvailable(slang)
 
 # Vulkan
 find_package(Vulkan REQUIRED COMPONENTS glslc)
@@ -181,10 +194,10 @@ foreach(SHADER ${GLSL_SOURCES})
 endforeach()
 add_custom_target(compile_glsl_shaders ALL DEPENDS ${SPIRV_OUTPUTS})
 
+set(SLANGC_EXECUTABLE $<TARGET_FILE:slangc>)
+
 # Slang shader compilation
 if(ENABLE_SLANG)
-    find_program(SLANGC_EXECUTABLE slangc HINTS "$ENV{VULKAN_SDK}/bin" REQUIRED)
-    message(STATUS "Slang compiler found: ${SLANGC_EXECUTABLE}")
 
     file(GLOB_RECURSE SLANG_SOURCES "${SHADER_DIR}/*.slang")
     set(SLANG_OUTPUTS "")
