@@ -135,13 +135,16 @@ namespace Aero::Utilities {
         }
 
         std::string get_current_time() {
+            // 1. Get current time
             auto now = std::chrono::system_clock::now();
-            std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-            char buffer[20];
-            struct tm time_info;
-            localtime_s(&time_info, &now_time);
-            std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &time_info);
-            return buffer;
+            std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+            std::tm* localTime = std::localtime(&currentTime);
+
+            std::stringstream ss;
+
+            ss << std::put_time(localTime, "%Y-%m-%d %H:%M:%S");
+
+            return ss.str();
         }
     };
 }
