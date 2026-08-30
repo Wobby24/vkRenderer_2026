@@ -19,13 +19,13 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Xcode")
 endif()
 
 # Compiler flags 
-#if(MSVC)
-#    set(CMAKE_CXX_FLAGS_DEBUG "/W4 /WX /Zi /Od")
-#    set(CMAKE_CXX_FLAGS_RELEASE "/W4 /WX /O2")
-#else()
-#    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -g -O0")
-#    set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -O3")
-#endif()
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_DEBUG "/permissive- /W4 /WX /Zi /Od /sdl")
+    set(CMAKE_CXX_FLAGS_RELEASE "/permissive- /W4 /WX /O2 /sdl")
+else()
+    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -g -O0 -fstack-protector-all -Werror=uninitialized -Wuninitialized -D_FORTIFY_SOURCE=2")
+   set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -O3 -fstack-protector-all -Werror=uninitialized -Wuninitialized -D_FORTIFY_SOURCE=3") 
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -196,7 +196,7 @@ add_custom_target(compile_glsl_shaders ALL DEPENDS ${SPIRV_OUTPUTS})
 
 set(SLANGC_EXECUTABLE $<TARGET_FILE:slangc>)
 
-# Slang shader compilation
+# Slang shader compilation, this is inefficient because we can handle the compliation directly in our code via the Slang C++ API, allowing for better control over the shader comp process and potentially better build times
 if(ENABLE_SLANG)
 
     file(GLOB_RECURSE SLANG_SOURCES "${SHADER_DIR}/*.slang")

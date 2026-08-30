@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <new> // Required for placement new
 #include <memory> // Required for std::align
+#include <cstring> // Required for std::memset
 
 // some ideas for arena allocator:
 //1. allow the the buffer to grow if we need more memory. Maybe it doesn't grow to the exact size needed, but rather we grow it to accommodate whatever is it we are allocating plus maybe 10 to 20 percent of its size

@@ -6,6 +6,7 @@
 #include <chrono>
 #include <ctime>
 #include <sstream>
+#include <iomanip>
 
 /*class Logger {
 public:
@@ -135,14 +136,12 @@ namespace Aero::Utilities {
         }
 
         std::string get_current_time() {
-            // 1. Get current time
             auto now = std::chrono::system_clock::now();
-            std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
-            std::tm* localTime = std::localtime(&currentTime);
+            std::chrono::zoned_time local_time{ std::chrono::current_zone(), now };
 
             std::stringstream ss;
 
-            ss << std::put_time(localTime, "%Y-%m-%d %H:%M:%S");
+            ss << std::format("{:%Y-%m-%d %H:%M:%S}", local_time);;
 
             return ss.str();
         }

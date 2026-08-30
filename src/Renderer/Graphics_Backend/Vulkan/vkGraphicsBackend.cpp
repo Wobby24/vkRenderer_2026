@@ -264,7 +264,7 @@ namespace Aero {
 
 			void vkGraphicsBackend::createLogicalDevice() {
 			
-
+				
 
 			}
 		}
