@@ -263,9 +263,48 @@ namespace Aero {
 			}
 
 			void vkGraphicsBackend::createLogicalDevice() {
-			
-				
+				std::vector<vk::QueueFamilyProperties> queueFamilyProperties = vkContext_.physicalDevice.getQueueFamilyProperties();
+				// basically, ranges find if takes a data type then we input a lambda that tells it how to search. It returns if we have the graphics queue available to us
+				auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamilyProperties, [](auto const& qfp) { return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0); });
+				auto graphicsIndex = static_cast<uint32_t>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
 
+				vk::DeviceQueueCreateInfo deviceQueueCreateInfo;
+				deviceQueueCreateInfo.queueFamilyIndex = graphicsIndex;
+
+				float queuePriority = 0.5f;
+
+				deviceQueueCreateInfo.queueFamilyIndex = graphicsIndex;
+				deviceQueueCreateInfo.queueCount = 1;
+				deviceQueueCreateInfo.pQueuePriorities = &queuePriority;
+
+				// Create a chain of feature structures
+				vk::StructureChain<vk::PhysicalDeviceFeatures2,
+					vk::PhysicalDeviceVulkan11Features,
+					vk::PhysicalDeviceVulkan13Features,
+					vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+					featureChain;
+
+				featureChain.get<vk::PhysicalDeviceVulkan11Features>()
+					.setShaderDrawParameters(true);
+
+				featureChain.get<vk::PhysicalDeviceVulkan13Features>()
+					.setDynamicRendering(true);
+
+				featureChain.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>()
+					.setExtendedDynamicState(true);
+
+				std::vector<const char*> requiredDeviceExtension = {
+					vk::KHRSwapchainExtensionName };
+
+				vk::DeviceCreateInfo deviceCreateInfo;
+				deviceCreateInfo.pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>();
+				deviceCreateInfo.queueCreateInfoCount = 1;
+				deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+				deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtension.size());
+				deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtension.data();
+
+				vkContext_.device = vk::raii::Device(vkContext_.physicalDevice, deviceCreateInfo);
+				vkContext_.graphicsQueue = vk::raii::Queue(vkContext_.device, graphicsIndex, 0);
 			}
 		}
 	}

@@ -10,6 +10,7 @@ namespace Aero {
 			vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 			vk::raii::PhysicalDevice physicalDevice = nullptr;
 			vk::raii::Device device = nullptr;
+			vk::raii::Queue graphicsQueue = nullptr;
 		};
 	}
 }
