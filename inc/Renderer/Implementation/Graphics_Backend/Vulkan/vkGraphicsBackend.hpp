@@ -34,6 +34,7 @@ namespace Aero {
                 uint64_t ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice);
                 bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice);
                 void createLogicalDevice();
+                void createSurface();
             };
         }
     }

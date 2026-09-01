@@ -17,14 +17,13 @@ endif()
 if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Xcode")
     set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs" FORCE)
 endif()
-
 # Compiler flags 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS_DEBUG "/permissive- /W4 /WX /Zi /Od /sdl")
-    set(CMAKE_CXX_FLAGS_RELEASE "/permissive- /W4 /WX /O2 /sdl")
+    target_compile_options(CMAKE_CXX_FLAGS_DEBUG "/permissive- /W4 /WX /Zi /Od /sdl")
+    target_compile_options(CMAKE_CXX_FLAGS_RELEASE "/permissive- /W4 /WX /O2 /sdl")
 else()
-    set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -g -O0 -fstack-protector-all -Werror=uninitialized -Wuninitialized -D_FORTIFY_SOURCE=2")
-   set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -O3 -fstack-protector-all -Werror=uninitialized -Wuninitialized -D_FORTIFY_SOURCE=3") 
+    target_compile_options(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -g -O0 -fstack-protector-all -Werror=uninitialized -Wuninitialized -D_FORTIFY_SOURCE=2")
+   target_compile_options(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -O3 -fstack-protector-all -Werror=uninitialized -Wuninitialized -D_FORTIFY_SOURCE=3") 
 endif()
 
 set(CMAKE_CXX_STANDARD 20)

@@ -3,8 +3,11 @@
 #include <Platform/Window/Interface/Types/ExtensionInfo.hpp>
 #include <Utilities/Assert.hpp>
 #include <Renderer/Implementation/Graphics_Backend/Vulkan/Types/vk/ValidationLayer.hpp>
+#include <Window/Interface/Types/WindowAPIs.hpp>
 #include <vulkan/vulkan_raii.hpp>
+#include <GLFW/glfw3.h>
 #include <algorithm>
+#include <ranges>
 #include <map>
 
 namespace Aero {
@@ -15,6 +18,9 @@ namespace Aero {
 			void vkGraphicsBackend::Initialize() {
 				createInstance();
 				setupDebugMessenger();
+				createSurface();
+				pickPhysicalDevice();
+				createLogicalDevice();
 			}
 
 			void vkGraphicsBackend::Shutdown() {
@@ -305,6 +311,17 @@ namespace Aero {
 
 				vkContext_.device = vk::raii::Device(vkContext_.physicalDevice, deviceCreateInfo);
 				vkContext_.graphicsQueue = vk::raii::Queue(vkContext_.device, graphicsIndex, 0);
+			}
+
+			void vkGraphicsBackend::createSurface() {
+				// We use the C API here mainly for compatibility reasons
+				VkSurfaceKHR surface;
+				switch (params_.renderSurface->GetSurfaceAPI()) {
+					case Aero::Platform::Window::Interface::WindowAPIs::GLFW:
+						VkSurfaceKHR surface;
+						if (glfwCreateWindowSurface(*vkContext_.instance, ))
+				}
+
 			}
 		}
 	}
