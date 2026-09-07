@@ -12,6 +12,7 @@ namespace Aero {
 			bool enableValidationLayers = true;
 			Platform::Window::Interface::ExtensionInfo extensionInfo;
 			Platform::Window::Interface::IRenderSurface* renderSurface = nullptr;
+			void* windowHandle;
 		};
 	}
 }

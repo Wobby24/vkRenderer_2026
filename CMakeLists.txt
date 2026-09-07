@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.28)
 cmake_policy(VERSION 3.31)
 project(Aero-vkRenderer VERSION 1.0 LANGUAGES CXX C)
 
@@ -16,14 +16,6 @@ endif()
 
 if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Xcode")
     set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs" FORCE)
-endif()
-# Compiler flags 
-if(MSVC)
-    target_compile_options(CMAKE_CXX_FLAGS_DEBUG "/permissive- /W4 /WX /Zi /Od /sdl")
-    target_compile_options(CMAKE_CXX_FLAGS_RELEASE "/permissive- /W4 /WX /O2 /sdl")
-else()
-    target_compile_options(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -g -O0 -fstack-protector-all -Werror=uninitialized -Wuninitialized -D_FORTIFY_SOURCE=2")
-   target_compile_options(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -O3 -fstack-protector-all -Werror=uninitialized -Wuninitialized -D_FORTIFY_SOURCE=3") 
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
@@ -91,22 +83,22 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glm)
 
 FetchContent_Declare(
-    slang
-    GIT_REPOSITORY https://github.com/shader-slang/slang.git
-    GIT_TAG v2026.16.1
+        slang
+        GIT_REPOSITORY https://github.com/shader-slang/slang.git
+        GIT_TAG v2026.17
 )
 set(SLANG_ENABLE_OPTIX OFF CACHE INTERNAL "")
 set(SLANG_ENABLE_CUDA OFF CACHE INTERNAL "")
 set(SLANG_ENABLE_NVAPI OFF CACHE INTERNAL "")
-set(SLANG_RHI_ENABLE_CUDA OFF CACHE BOOL "Disable RHI CUDA" FORCE)
-set(SLANG_RHI_ENABLE_OPTIX OFF CACHE BOOL "Disable RHI OptiX" FORCE)
-set(SLANG_RHI_ENABLE_VULKAN ON CACHE BOOL "Enable Vulkan" FORCE)
+set(SLANG_ENABLE_SLANG_RHI OFF CACHE BOOL "" FORCE)
+set(SLANG_ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(SLANG_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+set(SLANG_ENABLE_REPLAYER OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(slang)
 
 # Vulkan
 find_package(Vulkan REQUIRED COMPONENTS glslc)
 message(STATUS "Vulkan libraries: ${Vulkan_LIBRARIES}")
-
 
 # -----------------------------------------------------
 # Project Library

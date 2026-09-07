@@ -15,6 +15,7 @@ int main() {
     params.renderHeight = window.GetFramebufferSize().y;
     params.renderSurface_ = window.GetSurface();
     params.vsyncState = window.IsVSyncEnabled();
+    params.nativeWindowHandle = window.GetNativeHandle();
 
 	Aero::Renderer::Impl::Test_renderer renderer_(params);
     

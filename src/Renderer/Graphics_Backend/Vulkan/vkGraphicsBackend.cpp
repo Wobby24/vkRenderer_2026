@@ -3,7 +3,7 @@
 #include <Platform/Window/Interface/Types/ExtensionInfo.hpp>
 #include <Utilities/Assert.hpp>
 #include <Renderer/Implementation/Graphics_Backend/Vulkan/Types/vk/ValidationLayer.hpp>
-#include <Window/Interface/Types/WindowAPIs.hpp>
+#include <Platform/Window/Interface/Types/WindowAPIs.hpp>
 #include <vulkan/vulkan_raii.hpp>
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -270,16 +270,26 @@ namespace Aero {
 
 			void vkGraphicsBackend::createLogicalDevice() {
 				std::vector<vk::QueueFamilyProperties> queueFamilyProperties = vkContext_.physicalDevice.getQueueFamilyProperties();
-				// basically, ranges find if takes a data type then we input a lambda that tells it how to search. It returns if we have the graphics queue available to us
-				auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamilyProperties, [](auto const& qfp) { return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0); });
-				auto graphicsIndex = static_cast<uint32_t>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
 
-				vk::DeviceQueueCreateInfo deviceQueueCreateInfo;
-				deviceQueueCreateInfo.queueFamilyIndex = graphicsIndex;
+				// get the first index into queueFamilyProperties which supports both graphics and present
+				uint32_t queueIndex = ~0; // weird unary operator in c++, basically sets queueIndex to 0xFFFFFFF (everything bit set to 1)
+				for (uint32_t qfpIndex = 0; qfpIndex < queueFamilyProperties.size(); qfpIndex++) {
+					if ((queueFamilyProperties[qfpIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
+						vkContext_.physicalDevice.getSurfaceSupportKHR(qfpIndex, *vkContext_.surface)) {
+
+						// found a queue family that supports both graphics and present
+						queueIndex = qfpIndex;
+						break;
+					}
+				}
+				if (queueIndex == ~0) {
+					throw std::runtime_error("Could not find a queue for graphics AND present!");
+				}
 
 				float queuePriority = 0.5f;
 
-				deviceQueueCreateInfo.queueFamilyIndex = graphicsIndex;
+				vk::DeviceQueueCreateInfo deviceQueueCreateInfo;
+				deviceQueueCreateInfo.queueFamilyIndex = queueIndex;
 				deviceQueueCreateInfo.queueCount = 1;
 				deviceQueueCreateInfo.pQueuePriorities = &queuePriority;
 
@@ -310,18 +320,25 @@ namespace Aero {
 				deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtension.data();
 
 				vkContext_.device = vk::raii::Device(vkContext_.physicalDevice, deviceCreateInfo);
-				vkContext_.graphicsQueue = vk::raii::Queue(vkContext_.device, graphicsIndex, 0);
+				vkContext_.graphicsQueue = vk::raii::Queue(vkContext_.device, queueIndex, 0);
 			}
 
 			void vkGraphicsBackend::createSurface() {
 				// We use the C API here mainly for compatibility reasons
-				VkSurfaceKHR surface;
+				VkSurfaceKHR Csurface;
 				switch (params_.renderSurface->GetSurfaceAPI()) {
-					case Aero::Platform::Window::Interface::WindowAPIs::GLFW:
-						VkSurfaceKHR surface;
-						if (glfwCreateWindowSurface(*vkContext_.instance, ))
+				case Aero::Platform::Window::Interface::WindowAPIs::GLFW:
+					// I DO NOT want to pass the IWindow to the renderer, but honestly we might have to. Or, even better, we could just pass the native window API handle (this case, GLFWwindow*)
+					if (glfwCreateWindowSurface(*vkContext_.instance, static_cast<GLFWwindow*>(params_.windowHandle), nullptr, &Csurface) != 0)
+					{
+						throw std::runtime_error("Failed to create window surface!");
+					}
+					break;
+				default:
+					throw std::runtime_error("Invalid Window API to operate on for window surface creation!");
 				}
 
+				vkContext_.surface = vk::raii::SurfaceKHR(vkContext_.instance, Csurface);
 			}
 		}
 	}

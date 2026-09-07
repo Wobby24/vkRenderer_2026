@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <glm/glm.hpp>
 #include <Platform/Window/Interface/IRenderSurface.hpp>
-#include <Window/Interface/Types/WindowAPIs.hpp>
+#include <Platform/Window/Interface/Types/WindowAPIs.hpp>
 
 // Forward declare GLFW types
 struct GLFWwindow;
@@ -20,7 +20,7 @@ namespace Aero {
                     glm::ivec2 GetSize() const override;
                     void Bind() override;
                     void Present() override;
-                    Aero::Platform::Window::Interface::WindowAPIs& GetSurfaceAPI() override;
+                    Aero::Platform::Window::Interface::WindowAPIs GetSurfaceAPI() override;
 
                 private:
                     GLFWwindow* window_ = nullptr; // non-owning

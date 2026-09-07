@@ -1,5 +1,5 @@
 #include <PLatform/Window/Implementation/GLFW/GLFWRenderSurface.hpp>
-#include <Window/Interface/Types/WindowAPIs.hpp>
+#include <Platform/Window/Interface/Types/WindowAPIs.hpp>
 #include <GLFW/glfw3.h>
 
 namespace Aero {
@@ -33,8 +33,8 @@ namespace Aero {
                     glfwSwapBuffers(window_);
                 }
 
-                Aero::Platform::Window::Interface::WindowAPIs& GLFWRenderSurface::GetSurfaceAPI() {
-                    return Aero::Platform::Interface::WindowsAPIs::GLFW;
+                Aero::Platform::Window::Interface::WindowAPIs GLFWRenderSurface::GetSurfaceAPI() {
+                    return Aero::Platform::Window::Interface::WindowAPIs::GLFW;
                 }
 			}
 		}

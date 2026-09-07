@@ -16,5 +16,6 @@ namespace Aero::Renderer::Impl {
 		// could use pointer if needed, although usually this will only have 2 or so items so im not worried about performance issues
 		Platform::Window::Interface::ExtensionInfo extensionInfo;
 		Renderer::Interface::GraphicsAPIs api = Renderer::Interface::GraphicsAPIs::None;
+		void* nativeWindowHandle; 
 	};
 }
