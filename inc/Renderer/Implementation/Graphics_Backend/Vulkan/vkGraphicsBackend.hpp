@@ -32,9 +32,24 @@ namespace Aero {
                 void setupDebugMessenger();
                 void pickPhysicalDevice();
                 uint64_t ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice);
-                bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice);
+                bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice) const;
                 void createLogicalDevice();
                 void createSurface();
+                vk::SurfaceFormatKHR chooseSwapSurfaceFormat(std::vector<vk::SurfaceFormatKHR> const &availableFormats);
+                vk::PresentModeKHR chooseSwapPresentMode(std::vector<vk::PresentModeKHR> const &availablePresentModes);
+                vk::Extent2D chooseSwapExtent(vk::SurfaceCapabilitiesKHR const &capabilities);
+                void createSwapChain();
+
+                // extensions feature check
+                const std::string extensionsForPoints[4] = {
+                    "VK_KHR_ray_tracing_pipeline",
+                    "VK_EXT_descriptor_indexing",
+                    "VK_KHR_dynamic_rendering",
+                    "VK_KHR_synchronization2",
+                };
+
+                std::vector<const char*> requiredDeviceExtension = {
+                    vk::KHRSwapchainExtensionName};
             };
         }
     }

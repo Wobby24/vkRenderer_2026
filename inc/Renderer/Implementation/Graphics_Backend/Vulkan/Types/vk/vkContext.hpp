@@ -12,6 +12,10 @@ namespace Aero {
 			vk::raii::Device device = nullptr;
 			vk::raii::Queue graphicsQueue = nullptr;
 			vk::raii::SurfaceKHR surface = nullptr;
+			vk::raii::SwapchainKHR swapChain = nullptr;
+			std::vector<vk::Image> swapChainImages;
+			vk::SurfaceFormatKHR   swapChainSurfaceFormat;
+			vk::Extent2D           swapChainExtent;
 		};
 	}
 }

@@ -7,6 +7,7 @@
 #include <vulkan/vulkan_raii.hpp>
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <limits>
 #include <ranges>
 #include <map>
 
@@ -21,6 +22,7 @@ namespace Aero {
 				createSurface();
 				pickPhysicalDevice();
 				createLogicalDevice();
+				createSwapChain();
 			}
 
 			void vkGraphicsBackend::Shutdown() {
@@ -73,7 +75,7 @@ namespace Aero {
 
 				// we need to grab extensions for vulkan; make a function in the iwindow class that enables us to grab extensions, however though not all window libs support grabbing that,
 				// so if they dont, just throw an exception when those functions are used in ones that dont support it
-				// idk why intializer list didnt work for this; I am NOT using modules until compilers can get their shit together with module support
+				// idk why initializer list didnt work for this; I am NOT using modules until compilers can get their shit together with module support
 				vk::InstanceCreateInfo createInfo;
 				createInfo.pApplicationInfo = &vkContext_.appInfo;
 
@@ -87,9 +89,8 @@ namespace Aero {
 				createInfo.enabledExtensionCount = params_.extensionInfo.count;
 				createInfo.ppEnabledExtensionNames = params_.extensionInfo.extensions_.data();
 
-				// maybe add a check to ensure that the instance creation was succesful? problem is using vk result would lock us into using the c api, and we are avoiding that
+				// maybe add a check to ensure that the instance creation was successful? problem is using vk result would lock us into using the c api, and we are avoiding that
 				vkContext_.instance = vk::raii::Instance(vkContext_.context, createInfo);
-
 			}
 
 			void vkGraphicsBackend::setupDebugMessenger() {
@@ -121,7 +122,7 @@ namespace Aero {
 
 				std::multimap<uint64_t, vk::raii::PhysicalDevice> candidates;
 
-				for (auto physicalDevice: physicalDevices) {
+				for (const auto &physicalDevice: physicalDevices) {
 					if (isDeviceSuitable(physicalDevice)) {
 						uint64_t score = ratePhysicalDevices(physicalDevice);
 						candidates.insert(std::make_pair(score, physicalDevice));
@@ -136,10 +137,10 @@ namespace Aero {
 				vkContext_.physicalDevice = candidates.rbegin()->second;
 			}
 
-			bool vkGraphicsBackend::isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice) {
+			bool vkGraphicsBackend::isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice) const {
 				auto queueFamilies = physicalDevice.getQueueFamilyProperties();
 
-				bool isGrahpicsQueueSupported = false;
+				bool isGraphicsQueueSupported = false;
 				bool isRequestedVulkanVersionSupported = false;
 				bool supportsRequiredFeatures = false;
 
@@ -149,10 +150,10 @@ namespace Aero {
 					vk::PhysicalDeviceVulkan13Features,
 					vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
 
-				// queuflags uses a bitmask, so we cant just do ==, instead we use the and op to compare the 2 and see if it produces a non zero value, or zero
+				// queue flags uses a bitmask, so we cant just do ==, instead we use the and op to compare the 2 and see if it produces a non zero value, or zero
 				for (const auto& queueFamily : queueFamilies) {
 					if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
-						isGrahpicsQueueSupported = true;
+						isGraphicsQueueSupported = true;
 						break;
 					}
 				}
@@ -188,7 +189,7 @@ namespace Aero {
 						features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 				}
 
-				return (isGrahpicsQueueSupported && isRequestedVulkanVersionSupported && supportsRequiredFeatures);
+				return (isGraphicsQueueSupported && isRequestedVulkanVersionSupported && supportsRequiredFeatures);
 			}
 
 			uint64_t vkGraphicsBackend::ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice) {
@@ -202,7 +203,7 @@ namespace Aero {
 
 				// device properties
 
-				// discrete gpu check. usually seperates the powerful ones with the weak ones. Although there is an edge case where a super weak, older gpu will be selected over the better, integrated one because it's
+				// discrete gpu check. usually separates the powerful ones with the weak ones. Although there is an edge case where a super weak, older gpu will be selected over the better, integrated one because it's
 				// discrete, but we will fix that
 				if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
 					score += 10000;
@@ -215,7 +216,7 @@ namespace Aero {
 				score += deviceProperties.limits.maxImageDimension2D;
 
 				// device features
-				vk::Bool32 boolean = true;
+				constexpr vk::Bool32 boolean = true;
 				if (deviceFeatures.geometryShader == boolean) {
 					score += 2000;
 				}
@@ -225,7 +226,6 @@ namespace Aero {
 				}
 
 				// device memory properties
-
 				uint64_t totalDeviceLocalMemory = 0;
 				for (uint32_t i = 0; i < deviceMemoryProperties.memoryHeapCount; i++) {
 					if (deviceMemoryProperties.memoryHeaps[i].flags & vk::MemoryHeapFlags::BitsType::eDeviceLocal) {
@@ -237,19 +237,11 @@ namespace Aero {
 
 				if (deviceProperties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
 					// cap integrated gpu memory contribution so 32GB of slow RAM doesn't break the math
-					score += std::min(memoryInMB, uint64_t(2048));
+					score += std::min(memoryInMB, static_cast<uint64_t>(2048));
 				}
 				else {
 					score += memoryInMB;
 				}
-				
-				// extensions feature check
-				const std::string extensionsForPoints[4] = {
-					"VK_KHR_ray_tracing_pipeline",
-					"VK_EXT_descriptor_indexing",
-					"VK_KHR_dynamic_rendering",
-					"VK_KHR_synchronization2",
-				};
 
 				for (int i = 0; i < 4; i++) {
 					const std::string& targetExt = extensionsForPoints[i];
@@ -309,9 +301,6 @@ namespace Aero {
 				featureChain.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>()
 					.setExtendedDynamicState(true);
 
-				std::vector<const char*> requiredDeviceExtension = {
-					vk::KHRSwapchainExtensionName };
-
 				vk::DeviceCreateInfo deviceCreateInfo;
 				deviceCreateInfo.pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>();
 				deviceCreateInfo.queueCreateInfoCount = 1;
@@ -339,6 +328,47 @@ namespace Aero {
 				}
 
 				vkContext_.surface = vk::raii::SurfaceKHR(vkContext_.instance, Csurface);
+			}
+
+			vk::SurfaceFormatKHR vkGraphicsBackend::chooseSwapSurfaceFormat(std::vector<vk::SurfaceFormatKHR> const &availableFormats)
+			{
+				AERO_ASSERT(!availableFormats.empty(), "Swapchain has no available formats!");
+				return availableFormats[0];
+
+				const auto formatIt = std::ranges::find_if(
+					availableFormats,
+					[](const auto &format) { return format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear; });
+				// if formatIt is pointing to a valid element (not availableFormats.end(), that means no element was found that matches the lambda logic), then de-ref formatIt, then return it, otherwise just pick
+				// the first element in availableFormats. ? : is just an if else statement
+				return formatIt != availableFormats.end() ? *formatIt : availableFormats[0];
+			}
+
+			vk::PresentModeKHR vkGraphicsBackend::chooseSwapPresentMode(std::vector<vk::PresentModeKHR> const &availablePresentModes) {\
+				// eFIFO is the only guaranteed mode to be available. eMailbox is probably the better one, being equivalent to triple buffer vsync. If we can't get eMailBox, we just use FIFO
+				// Also, the tutorial has an assert statement to check if fifo was available. That is redundant because FIFO is always available in Vulkan, so we don't need to check
+				// This function checks in the entire vector if mailbox shows up at all, and if it does (via the lambda, which has an input parameter of value (which the std ranges any of repeatedly runs, changing the
+				// value from the vector that we input) of a present mode enum, and we check if it is equal to mailbox. if it is (the question mark, the main if statement part), then we return that.
+				// otherwise, we just return FIFO because it is guaranteed
+				return std::ranges::any_of(availablePresentModes, [](const vk::PresentModeKHR value) { return vk::PresentModeKHR::eMailbox == value;}) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
+			}
+
+			vk::Extent2D vkGraphicsBackend::chooseSwapExtent(vk::SurfaceCapabilitiesKHR const &capabilities) {
+				// currentExtent is only set to the special "undefined" value described above
+				// when the window manager lets us choose the extent ourselves; any other value
+				// means the surface already dictates a fixed event that we must use as-is.
+				if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+					return capabilities.currentExtent;
+				}
+
+				return {
+					std::clamp<uint32_t>(static_cast<uint32_t>(params_.renderSurface->GetSize().x), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+					std::clamp<uint32_t>(static_cast<uint32_t>(params_.renderSurface->GetSize().y), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+				};
+			}
+
+			void vkGraphicsBackend::createSwapChain() {
+				vk::SurfaceCapabilitiesKHR surfaceCapabilities = vkContext_.physicalDevice.getSurfaceCapabilitiesKHR( *vkContext_.surface );
+				vkContext_.
 			}
 		}
 	}
