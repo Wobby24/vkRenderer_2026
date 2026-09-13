@@ -26,6 +26,7 @@ namespace Aero::Renderer::Impl {
 			params.extensionInfo = params_.extensionInfo;
 			params.renderSurface = params_.renderSurface_;
 			params.VulkanVersionMinor = 3;
+			params.windowHandle = params_.nativeWindowHandle;
 
 			graphicsBackend_ = allocator_.allocate<Renderer::Impl::vkGraphicsBackend>(params);
 			graphicsBackend_->Initialize();

@@ -20,7 +20,7 @@ int main() {
 	Aero::Renderer::Impl::Test_renderer renderer_(params);
     
     try
-    {   
+    {
         renderer_.Initialize();
         
         while (!window.ShouldClose()) {

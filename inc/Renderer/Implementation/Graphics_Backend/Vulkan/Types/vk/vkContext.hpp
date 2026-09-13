@@ -14,8 +14,9 @@ namespace Aero {
 			vk::raii::SurfaceKHR surface = nullptr;
 			vk::raii::SwapchainKHR swapChain = nullptr;
 			std::vector<vk::Image> swapChainImages;
-			vk::SurfaceFormatKHR   swapChainSurfaceFormat;
-			vk::Extent2D           swapChainExtent;
+			vk::SurfaceFormatKHR swapChainSurfaceFormat;
+			vk::Extent2D swapChainExtent;
+			std::vector<vk::raii::ImageView> swapChainImageViews;
 		};
 	}
 }

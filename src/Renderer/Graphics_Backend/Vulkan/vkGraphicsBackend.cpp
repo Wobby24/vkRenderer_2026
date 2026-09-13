@@ -23,6 +23,7 @@ namespace Aero {
 				pickPhysicalDevice();
 				createLogicalDevice();
 				createSwapChain();
+				createImageView();
 			}
 
 			void vkGraphicsBackend::Shutdown() {
@@ -140,7 +141,6 @@ namespace Aero {
 			bool vkGraphicsBackend::isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice) const {
 				auto queueFamilies = physicalDevice.getQueueFamilyProperties();
 
-				bool isGraphicsQueueSupported = false;
 				bool isRequestedVulkanVersionSupported = false;
 				bool supportsRequiredFeatures = false;
 
@@ -150,13 +150,25 @@ namespace Aero {
 					vk::PhysicalDeviceVulkan13Features,
 					vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
 
-				// queue flags uses a bitmask, so we cant just do ==, instead we use the and op to compare the 2 and see if it produces a non zero value, or zero
-				for (const auto& queueFamily : queueFamilies) {
-					if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
-						isGraphicsQueueSupported = true;
-						break;
-					}
-				}
+				uint32_t qfpIndex      = 0;
+				bool     supportsGraphicsAndPresent =
+					std::ranges::any_of(queueFamilies,
+										[&physicalDevice, &surface = this->vkContext_.surface, &qfpIndex](auto const &qfp) {
+											bool const suitable = (qfp.queueFlags & vk::QueueFlagBits::eGraphics) && physicalDevice.getSurfaceSupportKHR(qfpIndex, *surface);
+											qfpIndex++;
+											return suitable;
+										});
+
+				// Check if all required physicalDevice extensions are available
+				auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+				bool supportsAllRequiredExtensions =
+				  std::ranges::all_of( requiredDeviceExtension,
+									   [&availableDeviceExtensions]( auto const & requiredDeviceExtension )
+									   {
+										 return std::ranges::any_of( availableDeviceExtensions,
+																	 [requiredDeviceExtension]( auto const & availableDeviceExtension )
+																	 { return strcmp( availableDeviceExtension.extensionName, requiredDeviceExtension ) == 0; } );
+									   } );
 
 				// implement api checks. i dont really like this, however its good enough for now
 				switch (params_.VulkanVersionMinor) {
@@ -189,7 +201,7 @@ namespace Aero {
 						features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 				}
 
-				return (isGraphicsQueueSupported && isRequestedVulkanVersionSupported && supportsRequiredFeatures);
+				return (supportsGraphicsAndPresent && isRequestedVulkanVersionSupported && supportsRequiredFeatures && supportsAllRequiredExtensions);
 			}
 
 			uint64_t vkGraphicsBackend::ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice) {
@@ -225,23 +237,23 @@ namespace Aero {
 					score += 2000;
 				}
 
-				// device memory properties
-				uint64_t totalDeviceLocalMemory = 0;
-				for (uint32_t i = 0; i < deviceMemoryProperties.memoryHeapCount; i++) {
-					if (deviceMemoryProperties.memoryHeaps[i].flags & vk::MemoryHeapFlags::BitsType::eDeviceLocal) {
-						totalDeviceLocalMemory += deviceMemoryProperties.memoryHeaps[i].size;
+				/*	// device memory properties
+					uint64_t totalDeviceLocalMemory = 0;
+					for (uint32_t i = 0; i < deviceMemoryProperties.memoryHeapCount; i++) {
+						if (deviceMemoryProperties.memoryHeaps[i].flags & vk::MemoryHeapFlags::BitsType::eDeviceLocal) {
+							totalDeviceLocalMemory += deviceMemoryProperties.memoryHeaps[i].size;
+						}
 					}
-				}
 
-				uint64_t memoryInMB = totalDeviceLocalMemory / (1024 * 1024);
+					uint64_t memoryInMB = totalDeviceLocalMemory / (1024 * 1024);
 
-				if (deviceProperties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
-					// cap integrated gpu memory contribution so 32GB of slow RAM doesn't break the math
-					score += std::min(memoryInMB, static_cast<uint64_t>(2048));
-				}
-				else {
-					score += memoryInMB;
-				}
+					if (deviceProperties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+						// cap integrated gpu memory contribution so 32GB of slow RAM doesn't break the math
+						score += std::min(memoryInMB, static_cast<uint64_t>(2048));
+					}
+					else {
+						score += memoryInMB;
+					}*/
 
 				for (int i = 0; i < 4; i++) {
 					const std::string& targetExt = extensionsForPoints[i];
@@ -263,19 +275,22 @@ namespace Aero {
 			void vkGraphicsBackend::createLogicalDevice() {
 				std::vector<vk::QueueFamilyProperties> queueFamilyProperties = vkContext_.physicalDevice.getQueueFamilyProperties();
 
+				// get the first index into queueFamilyProperties which supports graphics
 				// get the first index into queueFamilyProperties which supports both graphics and present
-				uint32_t queueIndex = ~0; // weird unary operator in c++, basically sets queueIndex to 0xFFFFFFF (everything bit set to 1)
-				for (uint32_t qfpIndex = 0; qfpIndex < queueFamilyProperties.size(); qfpIndex++) {
+				uint32_t queueIndex = ~0;
+				for (uint32_t qfpIndex = 0; qfpIndex < queueFamilyProperties.size(); qfpIndex++)
+				{
 					if ((queueFamilyProperties[qfpIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
-						vkContext_.physicalDevice.getSurfaceSupportKHR(qfpIndex, *vkContext_.surface)) {
-
+						vkContext_.physicalDevice.getSurfaceSupportKHR(qfpIndex, *vkContext_.surface))
+					{
 						// found a queue family that supports both graphics and present
 						queueIndex = qfpIndex;
 						break;
 					}
 				}
-				if (queueIndex == ~0) {
-					throw std::runtime_error("Could not find a queue for graphics AND present!");
+				if (queueIndex == ~0)
+				{
+					throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
 				}
 
 				float queuePriority = 0.5f;
@@ -316,13 +331,14 @@ namespace Aero {
 				// We use the C API here mainly for compatibility reasons
 				VkSurfaceKHR Csurface;
 				switch (params_.renderSurface->GetSurfaceAPI()) {
-				case Aero::Platform::Window::Interface::WindowAPIs::GLFW:
+				case Aero::Platform::Window::Interface::WindowAPIs::GLFW: {
 					// I DO NOT want to pass the IWindow to the renderer, but honestly we might have to. Or, even better, we could just pass the native window API handle (this case, GLFWwindow*)
-					if (glfwCreateWindowSurface(*vkContext_.instance, static_cast<GLFWwindow*>(params_.windowHandle), nullptr, &Csurface) != 0)
-					{
-						throw std::runtime_error("Failed to create window surface!");
+					VkResult res = glfwCreateWindowSurface(*vkContext_.instance, static_cast<GLFWwindow*>(params_.windowHandle), nullptr, &Csurface);
+					if (res != VK_SUCCESS) {
+						throw std::runtime_error("Failed to create window surface! VkResult: " + std::to_string(static_cast<int>(res)));
 					}
 					break;
+				}
 				default:
 					throw std::runtime_error("Invalid Window API to operate on for window surface creation!");
 				}
@@ -366,9 +382,73 @@ namespace Aero {
 				};
 			}
 
+
+			uint32_t vkGraphicsBackend::chooseSwapMinImageCount(vk::SurfaceCapabilitiesKHR const &surfaceCapabilities) {
+				auto minImageCount = std::max(3u, surfaceCapabilities.minImageCount);
+				if ((0 < surfaceCapabilities.maxImageCount) && (surfaceCapabilities.maxImageCount < minImageCount)) {
+					minImageCount = surfaceCapabilities.maxImageCount;
+				}
+				return minImageCount;
+			}
+
 			void vkGraphicsBackend::createSwapChain() {
 				vk::SurfaceCapabilitiesKHR surfaceCapabilities = vkContext_.physicalDevice.getSurfaceCapabilitiesKHR( *vkContext_.surface );
-				vkContext_.
+				vkContext_.swapChainExtent = chooseSwapExtent(surfaceCapabilities);
+				uint32_t minImageCount = chooseSwapMinImageCount(surfaceCapabilities);
+
+				std::vector<vk::SurfaceFormatKHR> availableFormats = vkContext_.physicalDevice.getSurfaceFormatsKHR(*vkContext_.surface);
+				vkContext_.swapChainSurfaceFormat = chooseSwapSurfaceFormat(availableFormats);
+
+				std::vector<vk::PresentModeKHR> availablePresentModes = vkContext_.physicalDevice.getSurfacePresentModesKHR(*vkContext_.surface);
+				vk::PresentModeKHR presentMode = chooseSwapPresentMode(availablePresentModes);
+
+				uint32_t imageCount = surfaceCapabilities.minImageCount + 1;
+
+				vk::SwapchainCreateInfoKHR swapChainCreateInfo;
+				swapChainCreateInfo.surface = *vkContext_.surface;
+				swapChainCreateInfo.minImageCount = minImageCount;
+				swapChainCreateInfo.imageFormat = vkContext_.swapChainSurfaceFormat.format;
+				swapChainCreateInfo.imageColorSpace = vkContext_.swapChainSurfaceFormat.colorSpace;
+				swapChainCreateInfo.imageExtent = vkContext_.swapChainExtent;
+				// specifies the number of layers each image consists of. Always 1 unless doing stereoscopic stuff
+				swapChainCreateInfo.imageArrayLayers = 1;
+				// specifies what kind of operations we will be doing on the images in the swapchain. Right now we only have color, but we will add depth eventually,
+				// but other operations can be applied, like memory transfer commands (assemble images elsewhere then transfer them to here) or depth, stencil, etc.
+				swapChainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+				// specifies how to handle images that belong to multiple queue families. We can either use exclusive, which makes images owned by one queue family at a time,
+				// and ownership must be explicitly transferred before using it in other queue family (best perf), or concurrent, which allows for it to be used across multiple
+				// families without direct ownership transfers. On most hardware, the graphics and present queues are in the same family, so no need for transfer of ownership.
+				swapChainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;
+				// specifies transformation operations on the images in the swapchain, like 90 degree rotations, flipping images horizontally, etc.
+				swapChainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
+				// specifies blending mode to be used with other windows in the window system. We want a fully opaque presentation.
+				swapChainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+				// Our present mode we choose. In our function, we either get FIFO or mailbox.
+				swapChainCreateInfo.presentMode = chooseSwapPresentMode(availablePresentModes);
+				// clipped specifies whether or not we care about the color of pixels that are obscured (e.g. a window in front of them)
+				swapChainCreateInfo.clipped = true;
+				// specifies old swapchain, as we might need to ref it once it becomes unoptimized  or we resize the window
+				swapChainCreateInfo.oldSwapchain = nullptr;
+
+				// finally, create the swapchain
+				vkContext_.swapChain = vk::raii::SwapchainKHR(vkContext_.device, swapChainCreateInfo);
+				vkContext_.swapChainImages = vkContext_.swapChain.getImages();
+			}
+
+			void vkGraphicsBackend::createImageView() {
+				AERO_ASSERT(vkContext_.swapChainImageViews.empty(), "Swapchain image views were not empty during creation!");
+
+				vk::ImageViewCreateInfo imageViewCreateInfo;
+				imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
+				imageViewCreateInfo.format = vkContext_.swapChainSurfaceFormat.format;
+				imageViewCreateInfo.subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0 ,1};
+				imageViewCreateInfo.components = {
+					vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity};
+
+				for (auto &image : vkContext_.swapChainImages) {
+					imageViewCreateInfo.image = image;
+					vkContext_.swapChainImageViews.emplace_back(vkContext_.device, imageViewCreateInfo);
+				}
 			}
 		}
 	}

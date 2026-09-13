@@ -104,11 +104,6 @@ namespace Aero {
 						throw std::runtime_error("Failed to initialize GLFW");
 
 					glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-					glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-					glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
 					state_.title = title;
 
 					window_ = glfwCreateWindow(state_.width, state_.height, state_.title.c_str(), nullptr, nullptr);

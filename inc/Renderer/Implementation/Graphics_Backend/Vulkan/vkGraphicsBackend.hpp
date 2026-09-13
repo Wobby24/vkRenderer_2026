@@ -39,6 +39,8 @@ namespace Aero {
                 vk::PresentModeKHR chooseSwapPresentMode(std::vector<vk::PresentModeKHR> const &availablePresentModes);
                 vk::Extent2D chooseSwapExtent(vk::SurfaceCapabilitiesKHR const &capabilities);
                 void createSwapChain();
+                uint32_t chooseSwapMinImageCount(vk::SurfaceCapabilitiesKHR const &surfaceCapabilities);
+                void createImageView();
 
                 // extensions feature check
                 const std::string extensionsForPoints[4] = {
