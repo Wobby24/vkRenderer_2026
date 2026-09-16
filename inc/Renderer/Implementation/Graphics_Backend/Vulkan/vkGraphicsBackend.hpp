@@ -28,12 +28,17 @@ namespace Aero {
             private:
                 Renderer::vkInitParams params_;
                 Renderer::vkContext vkContext_;
+
+                // INITIAL SETUP FUNCTIONS: //
                 void createInstance();
                 void setupDebugMessenger();
                 void pickPhysicalDevice();
                 uint64_t ratePhysicalDevices(vk::raii::PhysicalDevice const& physicalDevice);
                 bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice) const;
                 void createLogicalDevice();
+
+                // PRESENTATION SETUP FUNCTIONS: //
+
                 void createSurface();
                 vk::SurfaceFormatKHR chooseSwapSurfaceFormat(std::vector<vk::SurfaceFormatKHR> const &availableFormats);
                 vk::PresentModeKHR chooseSwapPresentMode(std::vector<vk::PresentModeKHR> const &availablePresentModes);
@@ -41,6 +46,12 @@ namespace Aero {
                 void createSwapChain();
                 uint32_t chooseSwapMinImageCount(vk::SurfaceCapabilitiesKHR const &surfaceCapabilities);
                 void createImageView();
+
+                // GRAPHICS PIPELINE SETUP FUNCTIONS: //
+
+                void createGraphicsPipeline();
+
+                // DATA TYPES FOR INITIALIZATION: //
 
                 // extensions feature check
                 const std::string extensionsForPoints[4] = {

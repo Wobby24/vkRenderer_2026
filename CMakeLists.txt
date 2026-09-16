@@ -100,20 +100,17 @@ FetchContent_MakeAvailable(slang)
 find_package(Vulkan REQUIRED COMPONENTS glslc)
 message(STATUS "Vulkan libraries: ${Vulkan_LIBRARIES}s")
 
-# Doxygen, doesn't auto build in cmake for some reason
-set(DOCS_DIR, "${CMAKE_SOURCE_DIR}/docs")
 find_package(Doxygen REQUIRED)
 if(DOXYGEN_FOUND)
-    # Set configuration variables
-    set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs)
-    set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+    set(DOXYGEN_IN  ${CMAKE_SOURCE_DIR}/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_SOURCE_DIR}/Doxyfile)
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
 
-    # Create the documentation target
-    doxygen_add_docs(docs
-            ${CMAKE_SOURCE_DIR}/src
-            ${CMAKE_SOURCE_DIR}/include
-            ALL
+    add_custom_target(docs ALL
+            COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             COMMENT "Generating API documentation with Doxygen"
+            VERBATIM
     )
 endif()
 
