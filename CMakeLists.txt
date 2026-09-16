@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.19)
 cmake_policy(VERSION 3.31)
 project(Aero-vkRenderer VERSION 1.0 LANGUAGES CXX C)
 
@@ -98,7 +98,24 @@ FetchContent_MakeAvailable(slang)
 
 # Vulkan
 find_package(Vulkan REQUIRED COMPONENTS glslc)
-message(STATUS "Vulkan libraries: ${Vulkan_LIBRARIES}")
+message(STATUS "Vulkan libraries: ${Vulkan_LIBRARIES}s")
+
+# Doxygen, doesn't auto build in cmake for some reason
+set(DOCS_DIR, "${CMAKE_SOURCE_DIR}/docs")
+find_package(Doxygen REQUIRED)
+if(DOXYGEN_FOUND)
+    # Set configuration variables
+    set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs)
+    set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+
+    # Create the documentation target
+    doxygen_add_docs(docs
+            ${CMAKE_SOURCE_DIR}/src
+            ${CMAKE_SOURCE_DIR}/include
+            ALL
+            COMMENT "Generating API documentation with Doxygen"
+    )
+endif()
 
 # -----------------------------------------------------
 # Project Library
@@ -213,17 +230,3 @@ if(ENABLE_SLANG)
     endforeach()
     add_custom_target(compile_slang_shaders ALL DEPENDS ${SLANG_OUTPUTS})
 endif()
-
-# Doxygen
-#find_package(Doxygen REQUIRED)
-#if(DOXYGEN_FOUND)
- #   set(DOXYFILE_IN ${CMAKE_SOURCE_DIR}/Doxyfile)
-  #  set(DOXYFILE_OUT ${DOCS_DIR}/Doxyfile)
-   # configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
-    #add_custom_target(doc ALL
-     #   COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
-      #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-       # COMMENT "Generating documentation with Doxygen"
-        #VERBATIM
-    #)
-#endif()

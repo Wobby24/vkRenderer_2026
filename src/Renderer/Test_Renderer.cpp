@@ -17,18 +17,18 @@ namespace Aero::Renderer::Impl {
 	void Aero::Renderer::Impl::Test_renderer::Initialize()
 	{
 		switch (params_.api) {
-		case Renderer::Interface::GraphicsAPIs::Vulkan:
+		case Aero::Renderer::Interface::GraphicsAPIs::Vulkan:
 		{
 			// forge params for graphics backend. basic values for now, will eventually allow for more customization
-			Renderer::vkInitParams params;
+			Renderer::vkInitParams vkParams;
 			// for testing, integrate with ndebug macro eventually
-			params.enableValidationLayers = true; 
-			params.extensionInfo = params_.extensionInfo;
-			params.renderSurface = params_.renderSurface_;
-			params.VulkanVersionMinor = 3;
-			params.windowHandle = params_.nativeWindowHandle;
+			vkParams.enableValidationLayers = true;
+			vkParams.extensionInfo = params_.extensionInfo;
+			vkParams.windowRenderInfo.renderSurface = params_.windowRenderInfo.renderSurface;
+			vkParams.VulkanVersionMinor = 3;
+			vkParams.windowRenderInfo.nativeWindowHandle = params_.windowRenderInfo.nativeWindowHandle;
 
-			graphicsBackend_ = allocator_.allocate<Renderer::Impl::vkGraphicsBackend>(params);
+			graphicsBackend_ = allocator_.allocate<Aero::Renderer::Impl::vkGraphicsBackend>(vkParams);
 			graphicsBackend_->Initialize();
 			
 			break;

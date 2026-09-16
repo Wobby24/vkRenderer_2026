@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <vector>
+#include <cstdint>
 
 namespace Aero::Platform::Window::Interface {
 	struct ExtensionInfo {

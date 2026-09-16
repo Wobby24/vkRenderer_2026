@@ -330,10 +330,10 @@ namespace Aero {
 			void vkGraphicsBackend::createSurface() {
 				// We use the C API here mainly for compatibility reasons
 				VkSurfaceKHR Csurface;
-				switch (params_.renderSurface->GetSurfaceAPI()) {
+				switch (params_.windowRenderInfo.renderSurface->GetSurfaceAPI()) {
 				case Aero::Platform::Window::Interface::WindowAPIs::GLFW: {
 					// I DO NOT want to pass the IWindow to the renderer, but honestly we might have to. Or, even better, we could just pass the native window API handle (this case, GLFWwindow*)
-					VkResult res = glfwCreateWindowSurface(*vkContext_.instance, static_cast<GLFWwindow*>(params_.windowHandle), nullptr, &Csurface);
+					VkResult res = glfwCreateWindowSurface(*vkContext_.instance, static_cast<GLFWwindow*>(params_.windowRenderInfo.nativeWindowHandle), nullptr, &Csurface);
 					if (res != VK_SUCCESS) {
 						throw std::runtime_error("Failed to create window surface! VkResult: " + std::to_string(static_cast<int>(res)));
 					}
@@ -377,8 +377,8 @@ namespace Aero {
 				}
 
 				return {
-					std::clamp<uint32_t>(static_cast<uint32_t>(params_.renderSurface->GetSize().x), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-					std::clamp<uint32_t>(static_cast<uint32_t>(params_.renderSurface->GetSize().y), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+					std::clamp<uint32_t>(static_cast<uint32_t>(params_.windowRenderInfo.renderSurface->GetSize().x), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+					std::clamp<uint32_t>(static_cast<uint32_t>(params_.windowRenderInfo.renderSurface->GetSize().y), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
 				};
 			}
 

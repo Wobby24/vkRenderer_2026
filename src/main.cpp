@@ -6,16 +6,17 @@
 #include <Renderer/Implementation/Types/RendererInitParams.hpp>
 
 int main() {
+    ///
+    /// Main entry function contains initialization for the window and renderer. The renderer gathers parameters from the window, which is then passed to the graphics backend.
+    ///
     Aero::Platform::Window::Impl::GLFW_Window window("test window");
 
     Aero::Renderer::Impl::RendererInitParams params;
     params.api = Aero::Renderer::Interface::GraphicsAPIs::Vulkan;
     params.extensionInfo = window.QueryExtensions(params.api);
-    params.renderWidth = window.GetFramebufferSize().x;
-    params.renderHeight = window.GetFramebufferSize().y;
-    params.renderSurface_ = window.GetSurface();
-    params.vsyncState = window.IsVSyncEnabled();
-    params.nativeWindowHandle = window.GetNativeHandle();
+    params.windowRenderInfo.renderSurface = window.GetSurface();
+    params.windowRenderInfo.vsyncState = window.IsVSyncEnabled();
+    params.windowRenderInfo.nativeWindowHandle = window.GetNativeHandle();
 
 	Aero::Renderer::Impl::Test_renderer renderer_(params);
     

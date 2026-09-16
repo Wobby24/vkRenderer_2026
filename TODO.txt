@@ -1,1 +1,2 @@
-I feel sooo dumb. we never passed the window handle to the graphics backend, so it was just a garbage value
+Pause on vulkan dev for now, we need to get doxygen and probably gtest integrated. doxygen woudl be nice for docs, and gtest for testing. Once that is good, we can go ahead and
+get the graphics pipeline rollings

@@ -1,8 +1,6 @@
 #pragma once
-#include <vector>
-#include <Platform/Window/Interface/IRenderSurface.hpp>
 #include <Platform/Window/Interface/Types/ExtensionInfo.hpp>
-#include <string>
+#include <Platform/Window/Interface/Types/WindowRenderInfo.hpp>
 
 namespace Aero {
 	namespace Renderer {
@@ -11,8 +9,7 @@ namespace Aero {
 			int VulkanVersionMinor = 4;
 			bool enableValidationLayers = true;
 			Platform::Window::Interface::ExtensionInfo extensionInfo;
-			Platform::Window::Interface::IRenderSurface* renderSurface = nullptr;
-			void* windowHandle;
+			Platform::Window::Interface::WindowRenderInfo windowRenderInfo;
 		};
 	}
 }
