@@ -1,3 +1,10 @@
+/**
+ * @file Test_Renderer.cpp
+ * @brief Test renderer used to test graphics backend and organizes systems into one class. 
+ * @author Wobby24
+ * @version 1.0
+ */
+
 #include "Renderer/Implementation/Test_Renderer.hpp"
 #include "Renderer/Implementation/Graphics_Backend/Vulkan/vkGraphicsBackend.hpp"
 #include "Renderer/Implementation/Graphics_Backend/Vulkan/vkInitParams.hpp"

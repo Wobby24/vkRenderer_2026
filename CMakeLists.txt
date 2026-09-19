@@ -103,7 +103,7 @@ message(STATUS "Vulkan libraries: ${Vulkan_LIBRARIES}s")
 find_package(Doxygen REQUIRED)
 if(DOXYGEN_FOUND)
     set(DOXYGEN_IN  ${CMAKE_SOURCE_DIR}/Doxyfile.in)
-    set(DOXYGEN_OUT ${CMAKE_SOURCE_DIR}/Doxyfile)
+    set(DOXYGEN_OUT ${CMAKE_SOURCE_DIR}/Doxyfile.in)
     configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
 
     add_custom_target(docs ALL

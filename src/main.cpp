@@ -1,3 +1,10 @@
+/**
+ * @file main.cpp
+ * @brief Entry point of application. Initializes the window and renderer, runs them, and then shuts them down.
+ * @author Wobby24
+ * @version 1.0
+ */
+
 #include <iostream>
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -6,9 +13,6 @@
 #include <Renderer/Implementation/Types/RendererInitParams.hpp>
 
 int main() {
-    ///
-    /// Main entry function contains initialization for the window and renderer. The renderer gathers parameters from the window, which is then passed to the graphics backend.
-    ///
     Aero::Platform::Window::Impl::GLFW_Window window("test window");
 
     Aero::Renderer::Impl::RendererInitParams params;
