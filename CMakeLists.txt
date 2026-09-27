@@ -6,6 +6,7 @@ project(Aero-vkRenderer VERSION 1.0 LANGUAGES CXX C)
 # Optional advanced feature(s)
 # -----------------------------------------------------
 option(ENABLE_SLANG "Enable Slang shader support" ON)
+# add warnings as errors back in here
 
 # -----------------------------------------------------
 # Build type
@@ -47,7 +48,8 @@ set(EXTERNAL_SOURCES
     "src/ext/stb_image.cpp"
 )
 
-set(MAIN_SOURCES "src/main.cpp")
+set(MAIN_SOURCES "src/main.cpp"
+)
 #set(TEST_SOURCES "test/test_main.cpp")
 
 # -----------------------------------------------------

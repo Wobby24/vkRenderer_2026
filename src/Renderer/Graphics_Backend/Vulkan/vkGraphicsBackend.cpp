@@ -10,6 +10,7 @@
 #include <limits>
 #include <ranges>
 #include <map>
+#include <Utilities/readFile.hpp>
 
 namespace Aero {
 	namespace Renderer {
@@ -449,6 +450,10 @@ namespace Aero {
 					imageViewCreateInfo.image = image;
 					vkContext_.swapChainImageViews.emplace_back(vkContext_.device, imageViewCreateInfo);
 				}
+			}
+
+			void vkGraphicsBackend::createGraphicsPipeline() {
+
 			}
 		}
 	}
